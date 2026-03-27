@@ -1,3 +1,4 @@
+import json
 import re
 import sqlite3
 import requests
@@ -42,6 +43,15 @@ def build_database():
                         FOREIGN KEY (champion_id) REFERENCES champions (id) ON DELETE CASCADE
                      )""")
 
+    c.execute("""CREATE TABLE IF NOT EXISTS items (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        plaintext TEXT,
+                        description TEXT,
+                        total_gold INTEGER,
+                        tags TEXT,
+                        stats_json TEXT
+                     )""")
     conn.commit()
     conn.close()
     print("Database created successfully")
@@ -118,7 +128,7 @@ def _get_champion_details(champion_id: str):
     champion = requests.get(f"{BASE_URL}/champion/{champion_id}.json").json()
     return champion["data"][champion_id]
 
-def fill_database():
+def fill_champions():
     print("Filling champions table...")
     champions_list = _get_champions_list()
     total_champs = len(champions_list)
@@ -197,7 +207,58 @@ def fill_database():
     print("Database filled")
 
 
+def _clean_item_description(raw_text: str) -> str:
+    """Clears the item description of Riot's HTML tags, preserving readability."""
+    if not raw_text:
+        return ""
+    text = re.sub(r'<br\s*/?>', ' ', raw_text)
+    text = re.sub(r'<li>', ' * ', text)
+    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+def _get_items_list():
+    items_response = requests.get(f"{BASE_URL}/item.json").json()
+    return items_response["data"]
+
+
+def fill_items():
+    print("Filling items table...")
+    items_list = _get_items_list()
+
+    conn = sqlite3.connect("lol_data.db")
+    c = conn.cursor()
+
+    total_items = len(items_list)
+    processed_count = 0
+
+    for item_id, item_data in items_list.items():
+        processed_count += 1
+        print(f"\rProcessing items: {processed_count}/{total_items} [{item_id}]{' ' * 10}", end="", flush=True)
+
+        is_purchasable = item_data.get("gold", {}).get("purchasable", False)
+        if not is_purchasable:
+            continue
+
+        name = item_data.get("name", "")
+        plaintext = item_data.get("plaintext", "")
+        total_gold = item_data.get("gold", {}).get("total", 0)
+        tags = ", ".join(item_data.get("tags", []))
+        stats_json = json.dumps(item_data.get("stats", {}))
+
+        clean_desc = _clean_item_description(item_data.get("description", ""))
+
+        c.execute("""INSERT INTO items
+                         (id, name, plaintext, description, total_gold, tags, stats_json)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                  (item_id, name, plaintext, clean_desc, total_gold, tags, stats_json))
+
+    conn.commit()
+    conn.close()
+    print("Items table filled successfully")
+
 
 if "__main__" == __name__:
     build_database()
-    fill_database()
+    fill_champions()
+    fill_items()
