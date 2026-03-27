@@ -87,23 +87,23 @@ def _parse_tooltip(tooltip: str, effect_burn: list, vars_list: list) -> str:
 
     return _clean_html(tooltip)
 
-def _parse_resource(resource_text: str, costBurn: str, effectBurn: list) -> str:
+def _parse_resource(resource_text: str, cost_burn: str, effect_burn: list) -> str:
     """
     Translates spell cost based on the rule 'Calculating Spell Costs' from Riot docs
     :param resource_text:
-    :param costBurn:
-    :param effectBurn:
+    :param cost_burn:
+    :param effect_burn:
     :return:
     """
     if not resource_text or resource_text == "None":
         return "No cost"
 
-    resource_text = re.sub(r'\{\{\s*cost\s*\}\}', str(costBurn), resource_text)
+    resource_text = re.sub(r'\{\{\s*cost\s*\}\}', str(cost_burn), resource_text)
 
     def replace_e(match):
         index = int(match.group(1))
-        if effectBurn and index < len(effectBurn) and effectBurn[index] is not None:
-            return str(effectBurn[index])
+        if effect_burn and index < len(effect_burn) and effect_burn[index] is not None:
+            return str(effect_burn[index])
         return "??"
 
     resource_text = re.sub(r'\{\{\s*e(\d+)\s*\}\}', replace_e, resource_text)
@@ -125,8 +125,8 @@ def fill_database():
     conn = sqlite3.connect("lol_data.db")
     c = conn.cursor()
 
-    for idx, champ_id in enumerate(champions_list.keys(), start=1):
-        print(f"\rProcessing champs: {idx}/{total_champs} [{champ_id}]{' ' * 10}", end="", flush=True)
+    for champ_num, champ_id in enumerate(champions_list.keys(), start=1):
+        print(f"\rProcessing champs: {champ_num}/{total_champs} [{champ_id}]{' ' * 10}", end="", flush=True)
         current_champ = champions_list[champ_id]
         champ_details = _get_champion_details(champ_id)
 
@@ -174,8 +174,8 @@ def fill_database():
 
             parsed_cost = _parse_resource(
                 resource_text=spell.get("resource", ""),
-                costBurn=spell.get("costBurn", "0"),
-                effectBurn=spell.get("effectBurn", [])
+                cost_burn=spell.get("costBurn", "0"),
+                effect_burn=spell.get("effectBurn", [])
             )
 
             if not parsed_desc or parsed_desc == "":
