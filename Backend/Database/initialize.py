@@ -52,6 +52,14 @@ def build_database():
                         tags TEXT,
                         stats_json TEXT
                      )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS summoner_spells (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        key INTEGER NOT NULL UNIQUE,
+                        description TEXT,
+                        cooldown TEXT
+                     )""")
     conn.commit()
     conn.close()
     print("Database created successfully")
@@ -257,8 +265,49 @@ def fill_items():
     conn.close()
     print("Items table filled successfully")
 
+def _get_summoner_spells_list():
+    response = requests.get(f"{BASE_URL}/summoner.json").json()
+    return response["data"]
+
+def fill_summoner_spells():
+    print("Filling summoner spells table...")
+    spells_list = _get_summoner_spells_list()
+
+    conn = sqlite3.connect("lol_data.db")
+    c = conn.cursor()
+
+
+    total_spells = len(spells_list)
+    for idx, (spell_id, spell_data) in enumerate(spells_list.items(), start=1):
+        print(f"\rProcessing summonner spells: {idx}/{total_spells} [{spell_id}]{' ' * 10}", end="", flush=True)
+
+        parsed_desc = _parse_tooltip(
+            tooltip=spell_data.get("tooltip", ""),
+            effect_burn=spell_data.get("effectBurn", []),
+            vars_list=spell_data.get("vars", [])
+        )
+
+        if not parsed_desc or parsed_desc == "":
+            parsed_desc = _clean_html(spell_data.get("description", ""))
+
+        c.execute("""INSERT INTO summoner_spells 
+                     (id, name, key, description, cooldown)
+                     VALUES (?, ?, ?, ?, ?)""",
+                  (
+                      spell_id,
+                      spell_data.get("name", ""),
+                      int(spell_data.get("key", 0)),
+                      parsed_desc,
+                      spell_data.get("cooldownBurn", "0")
+                  ))
+
+    conn.commit()
+    conn.close()
+    print("Summoner spells table filled successfully")
+
 
 if "__main__" == __name__:
     build_database()
     fill_champions()
     fill_items()
+    fill_summoner_spells()
