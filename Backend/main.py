@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from client_listener.client_listener import get_client_data
+
 app = FastAPI()
 
 
@@ -11,3 +13,8 @@ async def root():
 @app.get("/hello/{name}")
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
+
+# Temporary endpoint just for development
+@app.get("/client_data")
+async def read_client_data():
+    return get_client_data()
