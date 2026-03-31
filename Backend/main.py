@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from client_listener.client_listener import get_client_data
+from listener.client_listener import get_client_data
 
 app = FastAPI()
 
