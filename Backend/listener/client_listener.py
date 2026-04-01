@@ -105,7 +105,7 @@ async def read_latest_events(last_processed_event_id: int) -> tuple[int, list[Ev
     return last_processed_event_id, new_events
 
 
-
+# TODO update info about players during the game
 async def run_assistant_background_task():
     print("Waiting for game start")
 
