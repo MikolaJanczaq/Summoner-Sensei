@@ -75,7 +75,9 @@ def read_start() -> GameState:
         game_time=game_state_data["gameTime"],
         me=active_player,
         enemies=enemies,
-        allies=allies
+        allies=allies,
+        last_event_id=0,
+        on_going=True,
     )
 
 # TODO maybe extract last_processed_event_id to some sort of parameter of Class like LeaugeEventListener.last_event_id
@@ -86,7 +88,7 @@ def read_latest_events(last_processed_event_id: int) -> tuple[int, list[Event]]:
     all_events = read_endpoint_data("events").get("Events", [])
 
     for event in reversed(all_events):
-        event_id = event.get("EventId")
+        event_id = event.get("EventID")
 
         if event_id <= last_processed_event_id:
             break
