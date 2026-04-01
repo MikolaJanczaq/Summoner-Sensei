@@ -6,7 +6,7 @@ import urllib3
 from dotenv import load_dotenv
 
 from config.urls import LIVE_CLIENT_ENDPOINTS
-from listener.models import Player, GameState, ActivePlayer
+from listener.models import Player, GameState, ActivePlayer, Event
 
 # Ignore warning about insecure request (InsecureRequestWarning)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -39,7 +39,7 @@ def read_endpoint_data(endpoint_key, params=None) -> dict:
         return None
 
 
-def read_start():
+def read_start() -> GameState:
     game_state_data = read_endpoint_data("game_state")
 
     all_players_data = read_endpoint_data("players")
@@ -78,3 +78,27 @@ def read_start():
         allies=allies
     )
 
+# TODO maybe extract last_processed_event_id to some sort of parameter of Class like LeaugeEventListener.last_event_id
+# also can move this function to that class
+def read_latest_events(last_processed_event_id: int) -> tuple[int, list[Event]]:
+    new_events = []
+
+    all_events = read_endpoint_data("events").get("Events", [])
+
+    for event in reversed(all_events):
+        event_id = event.get("EventId")
+
+        if event_id <= last_processed_event_id:
+            break
+
+        try:
+            parsed_event = Event.model_validate(event)
+            new_events.append(parsed_event)
+        except Exception as e:
+            print(f"Error whilte parsing event {event_id}: {e}")
+
+    if new_events:
+        last_processed_event_id = new_events[0].id
+        new_events.reverse()
+
+    return last_processed_event_id, new_events
