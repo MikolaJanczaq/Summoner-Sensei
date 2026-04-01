@@ -61,12 +61,15 @@ def read_start():
     enemies = []
 
     for player in all_players_data:
-        if player["team"] == active_player.team and player["riotId"] != player.name:
-            ally = Player.model_validate(player)
-            allies.append(ally)
-        elif player["team"] != active_player.team:
-            enemy = Player.model_validate(player)
-            enemies.append(enemy)
+        if player["riotId"] == active_player.name:
+            continue
+
+        parsed_player = Player.model_validate(player)
+
+        if player["team"] == active_player.team:
+            allies.append(parsed_player)
+        else:
+            enemies.append(parsed_player)
 
     return GameState(
         game_time=game_state_data["gameTime"],
