@@ -34,7 +34,7 @@ async def read_endpoint_data(endpoint_key, params=None) -> dict | None:
 
 
 async def read_start() -> GameState:
-    game_state_data = await read_endpoint_data("game_state")
+    game_state_data = await read_endpoint_data("game_stats")
 
     all_players_data = await read_endpoint_data("players")
 
@@ -115,6 +115,7 @@ async def run_assistant_background_task():
         try:
             game_state = await read_start()
         except Exception:
+            print("Error reading game start")
             await asyncio.sleep(5)
 
     print("Game started")

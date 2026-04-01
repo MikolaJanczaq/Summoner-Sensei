@@ -31,7 +31,7 @@ LOCAL_HOST = "https://127.0.0.1:2999/liveclientdata"
 LIVE_CLIENT_ENDPOINTS = {
     "all": f"{LOCAL_HOST}/allgamedata",
     "events": f"{LOCAL_HOST}/eventdata",
-    "stats": f"{LOCAL_HOST}/gamestats",
+    "game_stats": f"{LOCAL_HOST}/gamestats",
     "active_player": f"{LOCAL_HOST}/activeplayer",
     "active_abilities": f"{LOCAL_HOST}/activeplayerabilities",
     "active_stats": f"{LOCAL_HOST}/activeplayerchampionstats",
