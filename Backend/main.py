@@ -1,20 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-from listener.client_listener import get_client_data
+from connection_manager import ws_manager
 
 app = FastAPI()
 
+active_websockets: list[WebSocket] = []
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
-
-# Temporary endpoint just for development
-@app.get("/client_data")
-async def read_client_data():
-    return get_client_data()
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)

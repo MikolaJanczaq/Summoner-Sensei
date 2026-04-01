@@ -43,7 +43,7 @@ class Event(BaseModel):
     time: float = Field(alias="EventTime")
     killer: str | None = Field(default=None, alias="KillerName")
     assisters: list[str] | None  = Field(default=None, alias="Assisters")
-    victims: str | None = Field(default=None, alias="VictimName")
+    victim: str | None = Field(default=None, alias="VictimName")
     # IF OBJECTIVE EVENTS
     dragon_type: str | None = Field(default=None, alias="DragonType")
     stolen: bool | None = Field(default=None, alias="Stolen")

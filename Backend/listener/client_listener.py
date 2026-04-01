@@ -1,12 +1,14 @@
+import asyncio
 import os
-import json
 
-import requests
+import httpx
 import urllib3
 from dotenv import load_dotenv
 
 from config.urls import LIVE_CLIENT_ENDPOINTS
+from connection_manager import ws_manager
 from listener.models import Player, GameState, ActivePlayer, Event
+from llm_integration.llm_connect import ask_llm
 
 # Ignore warning about insecure request (InsecureRequestWarning)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -15,37 +17,29 @@ load_dotenv()
 
 game_data_endpoint = os.getenv("LIVE_CLIENT_SERVER")
 
-def get_client_data():
-    # Using verify=False because the League of Legends client API uses a self-signed certificate
-    client_response = requests.get(game_data_endpoint, verify=False)
-    return client_response.json()
-
-# Temporary loading presaved file for development purposes
-with open("../data.json", "r") as f:
-    presaved_json = json.load(f)
-
-def read_endpoint_data(endpoint_key, params=None) -> dict:
+async def read_endpoint_data(endpoint_key, params=None) -> dict | None:
     url = LIVE_CLIENT_ENDPOINTS.get(endpoint_key)
     if not url:
         print("Invalid endpoint key")
         return None
 
     try:
-        response = requests.get(url, params=params, verify=False)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
+        async with httpx.AsyncClient(verify=False) as client:
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+    except httpx.RequestError as e:
         print(f"Connection error: {e}")
         return None
 
 
-def read_start() -> GameState:
-    game_state_data = read_endpoint_data("game_state")
+async def read_start() -> GameState:
+    game_state_data = await read_endpoint_data("game_state")
 
-    all_players_data = read_endpoint_data("players")
+    all_players_data = await read_endpoint_data("players")
 
-    active_name = read_endpoint_data("active_name")
-    active_player_dict = read_endpoint_data("active_player")
+    active_name = await read_endpoint_data("active_name")
+    active_player_dict = await read_endpoint_data("active_player")
     active_player_extracted = {}
 
     for player in all_players_data:
@@ -82,10 +76,15 @@ def read_start() -> GameState:
 
 # TODO maybe extract last_processed_event_id to some sort of parameter of Class like LeaugeEventListener.last_event_id
 # also can move this function to that class
-def read_latest_events(last_processed_event_id: int) -> tuple[int, list[Event]]:
+async def read_latest_events(last_processed_event_id: int) -> tuple[int, list[Event]]:
     new_events = []
 
-    all_events = read_endpoint_data("events").get("Events", [])
+    all_events = await read_endpoint_data("events")
+
+    if not all_events:
+        return last_processed_event_id, []
+
+    all_events = all_events.get("Events", [])
 
     for event in reversed(all_events):
         event_id = event.get("EventID")
@@ -104,3 +103,34 @@ def read_latest_events(last_processed_event_id: int) -> tuple[int, list[Event]]:
         new_events.reverse()
 
     return last_processed_event_id, new_events
+
+
+
+async def run_assistant_background_task():
+    print("Waiting for game start")
+
+    # waiting for game to launch
+    game_state = None
+    while game_state is None:
+        try:
+            game_state = await read_start()
+        except Exception:
+            await asyncio.sleep(5)
+
+    print("Game started")
+
+    while game_state.on_going:
+        try:
+            game_state.last_event_id, new_events = await read_latest_events(game_state.last_event_id)
+
+            if new_events:
+                print(f"Found {len(new_events)} new events")
+
+                llm_response = await ask_llm(game_state, new_events)
+                await ws_manager.broadcast(llm_response)
+
+        except Exception as e:
+            print(f"Error in assistant loop: {e}")
+
+        await asyncio.sleep(5)
+
