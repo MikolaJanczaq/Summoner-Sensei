@@ -2,7 +2,7 @@ import json
 import re
 import sqlite3
 import requests
-from Database.urls import BASE_URL
+from config.urls import BASE_URL
 
 
 def build_database():
