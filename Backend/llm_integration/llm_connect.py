@@ -1,4 +1,5 @@
 from listener.models import GameState, Event
+from llm_integration.lm_studio_integration import call_lm_studio
 
 
 async def ask_llm(
@@ -10,21 +11,26 @@ async def ask_llm(
     context_prompt = f"Game time: {game_state.game_time // 60} minutes"
     context_prompt += (f"You play as a {game_state.me.champion} "
                        f"(KDA: {game_state.me.scores.kills}/{game_state.me.scores.deaths}/{game_state.me.scores.assists}."
-                       f" You got {game_state.me.gold} gold.")
+                       f" You got {int(game_state.me.gold)} gold.")
 
-    context_prompt += "Latest events: \n"
+    context_prompt += "Latest events on the map: \n"
     for event in new_events:
-        context_prompt  += f"Event {event.name} Killer: {event.killer}, victim {event.victim}"
+        # TODO strip dict from sign like {":( so the LLM gets only text and not waste tokens
+        event_dict = event.model_dump(exclude_none=True)
+        context_prompt += f"-{event_dict}"
 
-    context_prompt += "\nGiven the attention, give me ONE service and relevant tactical advice. Be concise."
+    context_prompt += \
+        "\nBased on this information, give me ONE strictly tactical and actionable advice \n"\
+        "Be very concise, maximum 2 sentences."
 
+    # print("----SENDING PROMPT TO LLM-----")
+    # print(context_prompt)
+    # print("------------------------------")
 
-    # TODO refactor this so it sends prompt to real LLM and gets an answer
-    print("----SENDING PROMPT TO LLM-----")
-    print(context_prompt)
-    print("------------------------------")
-    fake_response = (f"I noticed {len(new_events)} new events! "
-                     f"Your KDA is {game_state.me.scores.kills}/{game_state.me.scores.deaths}. "
-                     f"Push the wave and go back to base to spend your {game_state.me.gold} gold!")
+    response = await call_lm_studio(context_prompt)
 
-    return fake_response
+    # print("----RECEIVED ADVICE-----")
+    # print(response)
+    # print("------------------------------")
+
+    return response
