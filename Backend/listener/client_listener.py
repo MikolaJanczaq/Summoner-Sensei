@@ -101,6 +101,13 @@ async def update_state(game_state: GameState):
     except Exception as e:
         print(f"Error updating state: {e}")
 
+def get_lane_opponents(me: ActivePlayer, enemies: list[Player]) -> list[Player]:
+    """Returns a list of lane opponents"""
+    if me.position in ["BOTTOM", "UTILITY"]:
+        return [enemy for enemy in enemies if enemy.position in ["BOTTOM", "UTILITY"]]
+    else:
+        return [enemy for enemy in enemies if enemy.position == me.position]
+
 
 # TODO maybe extract last_processed_event_id to some sort of parameter of Class like LeaugeEventListener.last_event_id
 # also can move this function to that class
