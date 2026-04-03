@@ -2,7 +2,7 @@ from listener.models import GameState, Event
 from llm_integration.lm_studio_integration import call_lm_studio
 
 
-def promp_creator(game_state: GameState, new_events: list[Event]) -> str:
+def prompt_creator(game_state: GameState, new_events: list[Event]) -> str:
     context_prompt = f"Game time: {game_state.game_time // 60} minutes"
     context_prompt += (f"You play as a {game_state.me.champion} "
                        f"(KDA: {game_state.me.scores.kills}/{game_state.me.scores.deaths}/{game_state.me.scores.assists}."
@@ -27,7 +27,7 @@ async def ask_llm(
 ) -> str:
     """Translates python objects into LLM events and connecting to API"""
 
-    created_prompt = promp_creator(game_state, new_events)
+    created_prompt = prompt_creator(game_state, new_events)
 
     # print("----SENDING PROMPT TO LLM-----")
     # print(created_prompt)
