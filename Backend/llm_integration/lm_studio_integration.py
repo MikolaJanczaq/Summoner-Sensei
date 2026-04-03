@@ -36,3 +36,9 @@ async def call_lm_studio(prompt_str) -> str:
     except Exception as e:
         print(f"Error parsing LM studio response: {e}")
         return "Error processing tactical advice"
+
+
+# TODO if we gonna use openai API in future
+async def call_openai(prompt_str) -> str:
+    """Helper function for calling openai API"""
+    pass
