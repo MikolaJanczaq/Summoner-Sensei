@@ -1,4 +1,4 @@
-from listener.client_listener import get_lane_opponents
+from listener.state_manager import get_lane_opponents
 from listener.models import GameState, Event
 
 
