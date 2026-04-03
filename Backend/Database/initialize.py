@@ -2,11 +2,21 @@ import json
 import re
 import sqlite3
 import requests
-from config.urls import BASE_URL
+import sqlite_vec
 
+from config.urls import BASE_URL
+from sentence_transformers import SentenceTransformer
+
+# Model for embeddings
+encoder = SentenceTransformer('all-MiniLM-L6-v2')
 
 def build_database():
     conn = sqlite3.connect("lol_data.db")
+
+    conn.enable_load_extension(True)
+    sqlite_vec.load(conn)
+    conn.enable_load_extension(False)
+
     c = conn.cursor()
 
     c.execute("""CREATE TABLE IF NOT EXISTS champions (
@@ -60,6 +70,14 @@ def build_database():
                         description TEXT,
                         cooldown TEXT
                      )""")
+
+    c.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS vec_items USING vec0(
+                item_id TEXT PRIMARY KEY,
+                embedding float[384]
+            )
+        """)
+
     conn.commit()
     conn.close()
     print("Database created successfully")
@@ -230,11 +248,29 @@ def _get_items_list():
     return items_response["data"]
 
 
+def prepare_item_for_vectorization(item_data, clean_desc: str) -> str:
+    name = item_data.get("name", "")
+    tags = ", ".join(item_data.get("tags", []))
+    plaintext = item_data.get("plaintext", "")
+
+    vector_text = f"Item Name: {name}. "
+    if tags: vector_text += f"Tags: {tags}. "
+    if plaintext: vector_text += f"Summary: {plaintext} "
+    if clean_desc: vector_text += f"Description: {clean_desc}"
+
+    return vector_text.strip()
+
+
 def fill_items():
     print("Filling items table...")
     items_list = _get_items_list()
 
     conn = sqlite3.connect("lol_data.db")
+
+    conn.enable_load_extension(True)
+    sqlite_vec.load(conn)
+    conn.enable_load_extension(False)
+
     c = conn.cursor()
 
     total_items = len(items_list)
@@ -260,6 +296,13 @@ def fill_items():
                          (id, name, plaintext, description, total_gold, tags, stats_json)
                      VALUES (?, ?, ?, ?, ?, ?, ?)""",
                   (item_id, name, plaintext, clean_desc, total_gold, tags, stats_json))
+
+        text_to_vectorize = prepare_item_for_vectorization(item_data, clean_desc)
+        vector = encoder.encode(text_to_vectorize).tobytes()
+        c.execute("""INSERT INTO vec_items
+                         (item_id, embedding)
+                         VALUES (?, ?)""",
+                  (item_id, vector))
 
     conn.commit()
     conn.close()
@@ -304,6 +347,31 @@ def fill_summoner_spells():
     conn.commit()
     conn.close()
     print("Summoner spells table filled successfully")
+
+
+# fast function to check functionality of RAG
+def find_best_items_for_problem(problem_description: str, limit: int = 3):
+    conn = sqlite3.connect("lol_data.db")
+    conn.enable_load_extension(True)
+    sqlite_vec.load(conn)
+    conn.enable_load_extension(False)
+
+    query_vector = encoder.encode(problem_description).tobytes()
+
+    c = conn.cursor()
+
+    c.execute("""
+              SELECT i.name, i.plaintext
+              FROM vec_items v
+                       JOIN items i ON v.item_id = i.id
+              WHERE v.embedding MATCH ?
+                AND k = ?
+              """, (query_vector, limit))
+
+    results = c.fetchall()
+    conn.close()
+
+    return results
 
 
 if "__main__" == __name__:
