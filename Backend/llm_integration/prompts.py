@@ -1,5 +1,5 @@
 from listener.state_manager import get_lane_opponents
-from listener.models import GameState, Event
+from listener.models import GameState, Event, Item
 
 
 def _format_player_info(game_state: GameState) -> str:
@@ -69,6 +69,31 @@ def prompt_creator(game_state: GameState, new_events: list[Event]) -> str:
         "give ONE strictly tactical and actionable advice.\n"
         "Consider your current gold and enemy items. "
         "Be very concise, maximum 2 sentences."
+    )
+
+    return prompt
+
+
+def item_recommendation_prompt_creator(
+        game_state: GameState,
+        shop_context: str,
+        suggested_items: list[tuple[str, str]],
+) -> str:
+    prompt = _format_player_info(game_state)
+    prompt += f"SHOPPING CONTEXT: {shop_context}\n\n"
+
+    prompt += "RECOMMENDED ITEMS FROM DATABASE (Based on current threat): \n"
+    if suggested_items:
+        for name, description in suggested_items:
+            prompt += f"- {name}: {description}\n"
+    else:
+        prompt += f"- No specific items found. Relay on your general knowledge.\n"
+
+    prompt += (
+        "\nYOUR TASK: You are an expert League of Legends coach.\n"
+        "Look at the player's current gold, their champion, and the recommended items above.\n"
+        "Select EXACTLY ONE item from the recommended list that the player should buy (or start building) right now.\n"
+        "Provide a maximum 2-sentence explanation of why this item is the best choice for the current situation."
     )
 
     return prompt
