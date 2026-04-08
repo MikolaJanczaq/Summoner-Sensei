@@ -22,3 +22,8 @@ async def ask_llm(
     # print("------------------------------")
 
     return response
+
+async def ask_llm_with_custom_prompt(prompt: str) -> str:
+    """Sends already formated custom prompt directly to LLM"""
+    response = await call_lm_studio(prompt)
+    return response
