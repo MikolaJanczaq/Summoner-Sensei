@@ -1,120 +1,73 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Header } from './components/Header'
+import { PlayerCard } from './components/PlayerCard'
+import { MainPlayerCard } from './components/MainPlayerCard'
+import { EventTicker } from './components/EventTicker'
+import type {Player} from "./types.ts";
+import {TipFeed} from "./components/TipFeed.tsx";
 
-function App() {
-  const [count, setCount] = useState(0)
 
+const mockAlly: Player = {
+  championName: "Jinx",
+  level: 14,
+  kda: { kills: 4, deaths: 2, assists: 3 },
+  items: ["Infinity Edge", "Rapid Firecannon", "Bloodthirster", "Lord Dominik's", "Guardian Angel", ""]
+}
+
+export const App = () => {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
 
-      <div className="ticks"></div>
+        {/* TOP SECTION */}
+        <Header />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <main className="px-6 py-6 flex-grow flex flex-col gap-6">
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          {/* PLAYERS SECTION */}
+          <section className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 items-start">
+
+            {/* Left column: Allies */}
+            <div className="flex flex-col gap-2">
+              <h2 className="text-sm font-bold text-blue-400 tracking-wider mb-2">ALLIES</h2>
+              <div className="flex flex-col gap-3">
+                <PlayerCard player={mockAlly}/>
+                <PlayerCard player={mockAlly}/>
+                <PlayerCard player={mockAlly}/>
+                <PlayerCard player={mockAlly}/>
+              </div>
+            </div>
+
+            {/* Middle column: Me */}
+            <div className="flex flex-col gap-2 items-center">
+              <h2 className="text-sm font-bold text-yellow-500 tracking-wider mb-2">ME</h2>
+              <MainPlayerCard player={mockAlly}/>
+            </div>
+
+            {/* Right column: Enemies */}
+            <div className="flex flex-col gap-2 items-end">
+              <h2 className="text-sm font-bold text-red-400 tracking-wider mb-2">ENEMIES</h2>
+              <div className="flex flex-col gap-3 items-end">
+                <PlayerCard player={mockAlly}/>
+                <PlayerCard player={mockAlly}/>
+                <PlayerCard player={mockAlly}/>
+                <PlayerCard player={mockAlly}/>
+                <PlayerCard player={mockAlly}/>
+              </div>
+            </div>
+
+          </section>
+
+          {/* TIPS FEED SECTION */}
+          <section className="mt-4">
+            <TipFeed />
+          </section>
+
+          {/* RAW EVENTS SECTION */}
+          <section>
+            <EventTicker />
+          </section>
+
+        </main>
+      </div>
   )
 }
 
