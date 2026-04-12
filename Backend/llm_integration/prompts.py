@@ -1,5 +1,5 @@
 from listener.state_manager import get_lane_opponents
-from listener.models import GameState, Event, Item
+from models.models import GameState, Event
 
 
 def _format_player_info(game_state: GameState) -> str:

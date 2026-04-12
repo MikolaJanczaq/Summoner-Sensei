@@ -1,12 +1,13 @@
 import asyncio
 
 from Database.rag_search import get_champion_info_for_rag, find_best_items_for_problem
-from connection_manager import ws_manager
+from ws_manager import ws_manager, build_ws_message, WsMessageType
 from listener.api_client import read_latest_events
-from listener.models import GameState, Event
+from models.models import GameState, Event
 from listener.state_manager import read_start, update_state
 from llm_integration.llm_connect import ask_llm, ask_llm_with_custom_prompt
 from llm_integration.prompts import item_recommendation_prompt_creator
+from state import store
 
 
 async def process_assistant_tick(
@@ -81,9 +82,12 @@ async def run_assistant_background_task():
 
     print("Game started")
 
+    store.current_state = game_state
+
     last_shop_time = 0
 
     while game_state.on_going:
+        store.current_state = game_state
         try:
             await update_state(game_state)
             game_state.last_event_id, new_events = await read_latest_events(game_state.last_event_id)
@@ -95,7 +99,12 @@ async def run_assistant_background_task():
             )
 
             if llm_response:
-                await ws_manager.broadcast(llm_response)
+                tip_data = {
+                    "timestamp": f"{game_state.game_time //60}:{game_state.game_time % 60}",
+                    "message": f"{llm_response}",
+                }
+                message_to_send = build_ws_message(WsMessageType.NEW_TIP, tip_data)
+                await ws_manager.broadcast(message_to_send)
 
         except Exception as e:
             print(f"Error in assistant loop: {e}")

@@ -5,7 +5,7 @@ import urllib3
 from dotenv import load_dotenv
 
 from config.urls import LIVE_CLIENT_ENDPOINTS
-from listener.models import ActivePlayer, Player, Event
+from models.models import ActivePlayer, Player, Event
 
 # Ignore warning about insecure request (InsecureRequestWarning)
 

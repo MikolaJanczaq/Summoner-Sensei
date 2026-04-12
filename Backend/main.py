@@ -1,9 +1,9 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket
 
-from connection_manager import ws_manager
+from endpoints import game, general, websocket
 from listener.client_listener import run_assistant_background_task
 
 
@@ -22,13 +22,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await ws_manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-    except WebSocketDisconnect:
-        ws_manager.disconnect(websocket)
+app.include_router(general.router, tags=["general"])
+app.include_router(game.router, prefix="/game", tags=["game"])
+app.include_router(websocket.router, prefix="/ws", tags=["websocket"])
