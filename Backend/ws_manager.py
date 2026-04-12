@@ -1,3 +1,7 @@
+import json
+from enum import Enum
+from typing import Any
+
 from fastapi import WebSocket
 
 class ConnectionManager:
@@ -27,3 +31,17 @@ class ConnectionManager:
 
 # One global instance
 ws_manager = ConnectionManager()
+
+class WsMessageType(str, Enum):
+    NEW_TIP = "NEW_TIP"
+    STATE_UPDATE = "STATE_UPDATE"
+    RAW_EVENT = "RAW_EVENT"
+
+
+def build_ws_message(message_type: WsMessageType, data: dict[str, Any]) -> str:
+    """Packs a data into with message type"""
+    payload = {
+        "type": message_type.value,
+        "data": data
+    }
+    return json.dumps(payload)
