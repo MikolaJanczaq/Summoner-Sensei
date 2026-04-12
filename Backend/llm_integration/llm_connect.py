@@ -1,4 +1,4 @@
-from listener.models import GameState, Event
+from models.models import GameState, Event
 from llm_integration.lm_studio_integration import call_lm_studio
 from llm_integration.prompts import prompt_creator
 

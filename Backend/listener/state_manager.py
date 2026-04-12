@@ -1,5 +1,5 @@
 from listener.api_client import read_endpoint_data, _fetch_and_parse_players
-from listener.models import GameState, ActivePlayer, Player
+from models.models import GameState, ActivePlayer, Player
 
 
 async def read_start() -> GameState:
