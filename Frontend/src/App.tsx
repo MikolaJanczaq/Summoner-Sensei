@@ -4,6 +4,7 @@ import { MainPlayerCard } from './components/MainPlayerCard'
 import { EventTicker } from './components/EventTicker'
 import type {Player} from "./types.ts";
 import {TipFeed} from "./components/TipFeed.tsx";
+import {useGameWebSocket} from "./hooks/useGameWebSocket.ts";
 
 
 const mockAlly: Player = {
@@ -14,11 +15,14 @@ const mockAlly: Player = {
 }
 
 export const App = () => {
+  const { isConnected, tips, rawEvents } = useGameWebSocket('ws://127.0.0.1:8000/ws');
+
+
   return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
 
         {/* TOP SECTION */}
-        <Header />
+        <Header isConnected={isConnected}/>
 
         <main className="px-6 py-6 flex-grow flex flex-col gap-6">
 
@@ -58,12 +62,12 @@ export const App = () => {
 
           {/* TIPS FEED SECTION */}
           <section className="mt-4">
-            <TipFeed />
+            <TipFeed tips={tips}/>
           </section>
 
           {/* RAW EVENTS SECTION */}
           <section>
-            <EventTicker />
+            <EventTicker events={rawEvents}/>
           </section>
 
         </main>
