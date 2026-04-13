@@ -99,8 +99,12 @@ async def run_assistant_background_task():
             )
 
             if llm_response:
+                # TODO refactor this so time is calculated directly in the GameState
+                minutes = int(game_state.game_time // 60)
+                seconds = int(game_state.game_time % 60)
+
                 tip_data = {
-                    "timestamp": f"{game_state.game_time //60}:{game_state.game_time % 60}",
+                    "timestamp": f"{minutes}:{seconds:02d}",
                     "message": f"{llm_response}",
                 }
                 message_to_send = build_ws_message(WsMessageType.NEW_TIP, tip_data)
