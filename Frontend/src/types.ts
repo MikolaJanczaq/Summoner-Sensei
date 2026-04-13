@@ -5,7 +5,7 @@ export interface PlayerStats {
 }
 
 export interface Player {
-    championName: String;
+    championName: string;
     level: number;
     kda: PlayerStats;
     items: string[],
@@ -24,4 +24,10 @@ export interface AdviceLog {
     id: string;
     timestamp: string;
     message: string
+}
+
+export interface GameMetadata {
+    patchVersion: string;
+    gameMode: string;
+    mapName: string;
 }

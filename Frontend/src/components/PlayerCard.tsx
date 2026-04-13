@@ -1,20 +1,39 @@
 import type {Player} from "../types.ts";
+import {getDDragonChampionName} from "../utils/riot.ts";
+import {useState} from "react";
 
 interface PlayerCardProps {
     player: Player;
+    patchVersion: string;
 }
 
-export const PlayerCard = ({ player }: PlayerCardProps) => {
+export const PlayerCard = ({ player, patchVersion }: PlayerCardProps) => {
+    const [championImageError, setChampionImageError] = useState(false);
+
+    const safeName = player.championName || "UNK";
+    const apiReadyName = getDDragonChampionName(safeName);
+
+    const championIconUrl = `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/img/champion/${apiReadyName}.png`;
+
     return (
         <div className="flex bg-slate-800 border border-slate-700 p-2 rounded-md w-64 gap-3 items-start shadow-sm">
 
             {/* Left section: Champion Icon */}
-            <div className="w-12 h-12 flex-shrink-0 bg-yellow-600 text-white font-bold flex items-center justify-center rounded uppercase text-sm">
-                {player.championName.substring(0, 3)}
-            </div>
+            {championImageError ? (
+                <div className="w-12 h-12 shrink-0 rounded bg-yellow-600 flex items-center justify-center font-bold text-slate-900 border border-slate-500 shadow-inner">
+                    {safeName.substring(0, 3).toUpperCase()}
+                </div>
+            ) : (
+                <img
+                    src={championIconUrl}
+                    alt={safeName}
+                    className="w-12 h-12 shrink-0 rounded bg-slate-900 border border-slate-600 object-cover"
+                    onError={() => setChampionImageError(true)}
+                />
+            )}
 
             {/* Right section: Stats and items */}
-            <div className="flex flex-col flex-grow">
+            <div className="flex flex-col grow">
 
                 {/* Name and level */}
                 <div className="flex justify-between items-baseline">
@@ -29,15 +48,20 @@ export const PlayerCard = ({ player }: PlayerCardProps) => {
 
                 {/* Items */}
                 <div className="grid grid-cols-3 gap-1">
-                    {player.items.map((item, index) => (
-                        <div
-                            key={index}
-                            className="w-6 h-6 bg-slate-900 border border-slate-600 rounded flex items-center justify-center cursor-pointer hover:border-yellow-500 transition-colors"
-                            title={item}
-                        >
-                            {/* TODO put a real item icon here */}
-                        </div>
-                    ))}
+                    {player.items.map((itemId, index) => {
+                        const itemIconUrl = `https://ddragon.leagueoflegends.com/cdn/${patchVersion}/img/item/${itemId}.png`;
+
+                        return (
+                            <div
+                                key={index}
+                                className="w-6 h-6 bg-slate-900 border border-slate-600 rounded overflow-hidden flex items-center justify-center cursor-pointer hover:border-yellow-500 transition-colors"
+                            >
+                                {itemId !== "0" && itemId !== "" && (
+                                    <img src={itemIconUrl} alt={`Item ${itemId}`} className="w-full h-full object-cover" />
+                                )}
+                            </div>
+                        )
+                    })}
                 </div>
 
             </div>
