@@ -11,10 +11,10 @@ router = APIRouter()
 def get_game_metadata():
     return {"status": "ok",
             "data": {
-                "version": PATCH_VERSION,
-                    # TODO maybe implement this if we want to
-                    # "gameMode": state.gameMode,
-                    # "mapName": state.mapName,
+                "patchVersion": PATCH_VERSION,
+                # TODO maybe implement this if we want to
+                "gameMode": "CLASSIC",
+                "mapName": "SummonersRift"
             }
     }
 
@@ -36,5 +36,5 @@ def get_game_state():
 
     return {
         "status": "in_progress",
-        "data": response_data.model_dump()
+        "data": response_data.model_dump(by_alias=True)
     }
