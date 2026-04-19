@@ -80,7 +80,7 @@ def fill_champions():
     print("Filling champions table...")
     champions_list = get_champions_list()
     total_champs = len(champions_list)
-    conn = sqlite3.connect("lol_data.db")
+    conn = get_db_connection()
     c = conn.cursor()
 
     for champ_num, champ_id in enumerate(champions_list.keys(), start=1):
@@ -202,7 +202,7 @@ def fill_summoner_spells():
     print("Filling summoner spells table...")
     spells_list = get_summoner_spells_list()
 
-    conn = sqlite3.connect("lol_data.db")
+    conn = get_db_connection()
     c = conn.cursor()
 
 
