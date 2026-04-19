@@ -1,6 +1,8 @@
 import asyncio
 
 from Database.rag_search import get_champion_info_for_rag, find_best_items_for_problem
+from endpoints.mappers import create_frontend_player
+from models.frontend_models import FrontendGameState
 from ws_manager import ws_manager, build_ws_message, WsMessageType
 from listener.api_client import read_latest_events
 from models.models import GameState, Event
@@ -68,26 +70,37 @@ async def process_assistant_tick(
     return None, last_shop_time
 
 
-async def run_assistant_background_task():
-    print("Waiting for game start")
-
-    # waiting for game to launch
-    game_state = None
-    while game_state is None:
+async def ui_broadcast_loop(game_state: GameState):
+    """Refresh game stats and sends it to the UI"""
+    while game_state.on_going:
         try:
-            game_state = await read_start()
-        except Exception:
-            print("Error reading game start")
-            await asyncio.sleep(5)
+            await update_state(game_state)
 
-    print("Game started")
+            response_data = FrontendGameState(
+                gameTime=game_state.game_time,
+                me=create_frontend_player(game_state.me, is_me=True),
+                allies=[create_frontend_player(p) for p in game_state.allies],
+                enemies=[create_frontend_player(p) for p in game_state.enemies],
+            )
 
-    store.current_state = game_state
+            message_to_send = build_ws_message(
+                WsMessageType.STATE_UPDATE,
+                response_data.model_dump(by_alias=True)
+            )
 
+            await ws_manager.broadcast(message_to_send)
+
+        except Exception as e:
+            print(f"Error in ui loop: {e}")
+            game_state.on_going = False
+
+        await asyncio.sleep(2)
+
+async def llm_assistan_loop(game_state: GameState):
+    """Waits for events and asks LLM"""
     last_shop_time = 0
 
     while game_state.on_going:
-        store.current_state = game_state
         try:
             await update_state(game_state)
             game_state.last_event_id, new_events = await read_latest_events(game_state.last_event_id)
@@ -114,4 +127,34 @@ async def run_assistant_background_task():
             print(f"Error in assistant loop: {e}")
 
         await asyncio.sleep(20)
+
+
+async def run_assistant_background_task():
+    print("Waiting for game start")
+
+    # waiting for game to launch
+    game_state = None
+    while game_state is None:
+        try:
+            game_state = await read_start()
+        except Exception:
+            print("Error reading game start")
+            await asyncio.sleep(5)
+
+    print("Game started")
+
+    store.current_state = game_state
+
+    ui_task = asyncio.create_task(ui_broadcast_loop(game_state))
+    llm_task = asyncio.create_task(llm_assistan_loop(game_state))
+
+    while game_state.on_going:
+        await asyncio.sleep(5)
+
+    print("Game ended. Cleaning up...")
+    ui_task.cancel()
+    llm_task.cancel()
+    store.current_state = None
+
+
 
