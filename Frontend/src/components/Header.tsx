@@ -9,7 +9,7 @@ export const Header = ({ isConnected = true }: HeaderProps) => {
 
             {/* APP TITLE */}
             <h1 className="text-xl font-black text-yellow-500 tracking-widest uppercase">
-                LoL Assistant
+                Summoner Sensei
             </h1>
 
             {/* STATUS LIGHT */}
