@@ -61,8 +61,8 @@ export const useGameData = (baseUrl: string, wsUrl: string) => {
                             break;
 
                         case 'STATE_UPDATE':
-                            console.log("State update!", parsed.data);
-                            // setGameState(prev => ({ ...prev, ...parsed.data }));
+                            // console.log("State update!", parsed.data);
+                            setGameState(parsed.data);
                             break;
                     }
                 } catch (e) {
